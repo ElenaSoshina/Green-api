@@ -1,6 +1,4 @@
 import type { Chat } from "@/entities/chat";
-import { TextField } from "@/shared/text-field";
-import { Button } from "@/shared/ui/button";
 import styles from "./ChatList.module.css";
 
 type ChatListProps = {
@@ -10,6 +8,7 @@ type ChatListProps = {
   onPhoneChange: (phone: string) => void;
   onCreateChat: () => void;
   onSelectChat: (chatId: string) => void;
+  onLogout: () => void;
 };
 
 export function ChatList({
@@ -19,9 +18,16 @@ export function ChatList({
   onPhoneChange,
   onCreateChat,
   onSelectChat,
+  onLogout,
 }: ChatListProps) {
   return (
     <aside className={styles.sidebar}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Чаты</h1>
+        <button className={styles.logout} type="button" onClick={onLogout}>
+          Выйти
+        </button>
+      </header>
       <form
         className={styles.form}
         onSubmit={(event) => {
@@ -29,17 +35,20 @@ export function ChatList({
           onCreateChat();
         }}
       >
-        <TextField
-          label="Номер телефона"
+        <input
+          className={styles.phone}
           value={phone}
-          onChange={onPhoneChange}
-          placeholder="Введите номер телефона"
+          placeholder="Номер телефона"
+          aria-label="Номер телефона"
+          onChange={(event) => onPhoneChange(event.target.value)}
         />
-        <Button type="submit">Создать чат</Button>
+        <button className={styles.create} type="submit" aria-label="Создать чат">
+          +
+        </button>
       </form>
       <ul className={styles.list}>
         {chats.map((chat) => (
-          <li key={chat.id} className={styles.chat}>
+          <li key={chat.id}>
             <button
               className={
                 chat.id === activeChatId ? styles.chatActive : styles.chat
@@ -47,7 +56,8 @@ export function ChatList({
               type="button"
               onClick={() => onSelectChat(chat.id)}
             >
-              {chat.title}
+              <span className={styles.avatar}>{chat.title.slice(0, 1)}</span>
+              <span className={styles.chatTitle}>{chat.title}</span>
             </button>
           </li>
         ))}

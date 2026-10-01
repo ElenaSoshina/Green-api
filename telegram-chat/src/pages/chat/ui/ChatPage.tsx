@@ -1,20 +1,26 @@
 import type { Message } from "@/entities/message";
 import type { Chat } from "@/entities/chat";
-import { Button } from "@/shared/ui/button";
+import { deleteNotification, receiveNotification, sendMessage } from "@/shared/api";
 import { ChatList } from "@/widgets/chat-list";
 import { MessageThread } from "@/widgets/message-thread";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./ChatPage.module.css";
+import type { ApiCredentials } from "@/entities/session";
 
 type ChatPageProps = {
+  credentials: ApiCredentials;
   onLogout: () => void;
 };
 
-export function ChatPage({ onLogout }: ChatPageProps) {
+export function ChatPage({ credentials, onLogout }: ChatPageProps) {
   const [phone, setPhone] = useState("");
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sendError, setSendError] = useState("");
+
+  const chatsRef = useRef(chats);
+  chatsRef.current = chats;
 
   const activeChat = chats.find((chat) => chat.id === activeChatId) ?? null;
   const activeMessages = messages.filter(
@@ -35,24 +41,92 @@ export function ChatPage({ onLogout }: ChatPageProps) {
     setActiveChatId(chatId);
     setPhone("");
   };
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!activeChatId) return;
-    setMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        chatId: activeChatId,
-        text,
-        direction: "outgoing",
-      },
-    ]);
+    setSendError("");
+    try {
+      const result = await sendMessage(credentials, activeChatId, text);
+      setMessages((current) => [
+        ...current,
+        {
+          id: result.idMessage,
+          chatId: activeChatId,
+          text,
+          direction: "outgoing",
+        },
+      ]);
+    } catch (reason) {
+      const message =
+        reason instanceof Error
+          ? reason.message
+          : "Не удалось отправить сообщение";
+      setSendError(message);
+    }
   };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let stopped = false;
+
+    const poll = async () => {
+      while (!stopped) {
+        try {
+          const notification = await receiveNotification(
+            credentials,
+            controller.signal,
+          );
+          if (!notification) continue;
+
+          await deleteNotification(credentials, notification.receiptId);
+
+          const body = notification.body;
+          const text = body.messageData?.textMessageData?.textMessage;
+          if (
+            body.typeWebhook !== "incomingMessageReceived" ||
+            body.messageData?.typeMessage !== "textMessage" ||
+            !text
+          ) {
+            continue;
+          }
+
+          const senderPhone = String(body.senderData?.senderPhoneNumber ?? "");
+          const matchedChat = chatsRef.current.find((chat) => {
+            const phone = chat.id.replace(/@c\.us$/, "");
+            return chat.id === body.senderData?.chatId || phone === senderPhone;
+          });
+          if (!matchedChat) continue;
+
+          setMessages((current) => [
+            ...current,
+            {
+              id: body.idMessage ?? String(notification.receiptId),
+              chatId: matchedChat.id,
+              text,
+              direction: "incoming",
+            },
+          ]);
+        } catch (reason) {
+          if (stopped || controller.signal.aborted) return;
+          const message =
+            reason instanceof Error
+              ? reason.message
+              : "Не удалось получить сообщение";
+          setSendError(message);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+      }
+    };
+
+    void poll();
+
+    return () => {
+      stopped = true;
+      controller.abort();
+    };
+  }, [credentials]);
+
   return (
     <main className={styles.page}>
-      <header className={styles.topbar}>
-        <span>Telegram chat</span>
-        <Button onClick={onLogout}>Выйти</Button>
-      </header>
       <div className={styles.layout}>
         <ChatList
           chats={chats}
@@ -61,12 +135,16 @@ export function ChatPage({ onLogout }: ChatPageProps) {
           onPhoneChange={setPhone}
           onCreateChat={handleCreateChat}
           onSelectChat={setActiveChatId}
+          onLogout={onLogout}
         />
-        <MessageThread
-          chat={activeChat}
-          messages={activeMessages}
-          onSend={handleSend}
-        />
+        <div className={styles.conversation}>
+          {sendError ? <p className={styles.error}>{sendError}</p> : null}
+          <MessageThread
+            chat={activeChat}
+            messages={activeMessages}
+            onSend={handleSend}
+          />
+        </div>
       </div>
     </main>
   );

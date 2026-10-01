@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { ChatPage } from "@/pages/chat";
 import { LoginPage } from "@/pages/login";
-
-type AppScreen = "login" | "chat";
+import type { ApiCredentials } from "@/entities/session";
 
 export function App() {
-  const [screen, setScreen] = useState<AppScreen>("login");
-
-  if (screen === "login") {
-    return <LoginPage onSuccess={() => setScreen("chat")} />;
+  const [credentials, setCredentials] = useState<ApiCredentials | null>(null);
+  if (!credentials) {
+    return <LoginPage onSuccess={setCredentials} />;
   }
 
-  return <ChatPage onLogout={() => setScreen("login")} />;
+  return (
+    <ChatPage credentials={credentials} onLogout={() => setCredentials(null)} />
+  );
 }

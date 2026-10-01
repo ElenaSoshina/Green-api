@@ -1,20 +1,26 @@
 .page {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
   background: #fff;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e6e8ee;
-}
-
 .layout {
   display: flex;
-  flex: 1;
+  height: 100%;
   min-height: 0;
+}
+
+.conversation {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #eef1f4;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 16px;
+  color: #d92d20;
+  font-size: 14px;
 }

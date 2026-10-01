@@ -1,7 +1,6 @@
 import type { Chat } from "@/entities/chat";
 import type { Message } from "@/entities/message";
 import { useState } from "react";
-import { Button } from "@/shared/ui/button";
 import styles from "./MessageThread.module.css";
 
 type MessageThreadProps = {
@@ -13,7 +12,9 @@ type MessageThreadProps = {
 export function MessageThread({ chat, messages, onSend }: MessageThreadProps) {
   const [text, setText] = useState("");
   if (!chat) {
-    return <section>Создайте чат</section>;
+    return (
+      <section className={styles.empty}>Создайте чат по номеру телефона</section>
+    );
   }
 
   const handleSubmit = () => {
@@ -25,7 +26,10 @@ export function MessageThread({ chat, messages, onSend }: MessageThreadProps) {
 
   return (
     <section className={styles.thread}>
-      <header className={styles.header}>{chat.title}</header>
+      <header className={styles.header}>
+        <span className={styles.avatar}>{chat.title.slice(0, 1)}</span>
+        <span>{chat.title}</span>
+      </header>
       <ul className={styles.messages}>
         {messages.map((message) => (
           <li
@@ -53,7 +57,11 @@ export function MessageThread({ chat, messages, onSend }: MessageThreadProps) {
           placeholder="Сообщение"
           onChange={(event) => setText(event.target.value)}
         />
-        <Button type="submit">Щтправить</Button>
+        <button className={styles.send} type="submit" aria-label="Отправить">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12h12M12 6l6 6-6 6" />
+          </svg>
+        </button>
       </form>
     </section>
   );

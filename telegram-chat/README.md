@@ -1,75 +1,33 @@
-# React + TypeScript + Vite
+# Telegram-чат на GREEN-API
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Веб-чат для обмена текстовыми сообщениями в Telegram через [GREEN-API](https://green-api.com/). Пользователь вводит данные инстанса, создаёт диалог по номеру телефона, отправляет текст и видит ответ собеседника.
 
-Currently, two official plugins are available:
+Интерфейс сделан по образцу веб-версии [MAX](https://web.max.ru/). Задание допускает Telegram, если мессенджер MAX недоступен.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Что нужно до запуска
 
-## React Compiler
+1. Node.js 22.13 или новее. Подойдёт и Node.js 20.19+.
+2. Инстанс Telegram в личном кабинете GREEN-API со статусом `authorized`.
+3. Пустое поле webhook URL у этого инстанса. Иначе входящие сообщения не приходят через HTTP API.
+4. Включённые уведомления о входящих сообщениях.
+5. `idInstance`, `apiTokenInstance` и `apiUrl` из карточки инстанса. Обычно `apiUrl` равен `https://api.green-api.com`. Токен в репозиторий не кладётся: его вводят на экране входа.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Локальный запуск
 
-## Expanding the ESLint configuration
+В каталоге `telegram-chat`:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Откройте адрес, который покажет Vite, обычно http://localhost:5173/.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Как проверить
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Введите `apiUrl`, `idInstance` и `apiTokenInstance`, нажмите «Войти». Чат откроется, только если инстанс авторизован.
+2. Введите номер получателя в международном формате, без `+`, и нажмите «+». Пример: `79001234567`.
+3. Напишите текст и отправьте его круглой кнопкой со стрелкой. Сообщение должно появиться в Telegram получателя.
+4. Ответьте с этого номера в Telegram. Ответ появится в веб-чате слева, без перезагрузки страницы.
 
-```
+Отправка идёт методом `sendMessage`. Входящие забираются методами `receiveNotification` и `deleteNotification`.
